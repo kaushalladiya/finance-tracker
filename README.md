@@ -64,7 +64,7 @@ A full-stack web application for tracking personal income and expenses, built wi
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/finance-tracker.git
+   git clone https://github.com/kaushalladiya/finance-tracker.git
    cd finance-tracker
    ```
 
@@ -127,14 +127,14 @@ FinanceTracker/
 
 ### Transactions
 
-| Method |          Endpoint           | Description            |
-|--------|-----------------------------|------------------------|
-| GET    | `/api/transactions`         | Get all transactions   |
-| GET    | `/api/transactions/{id}`    | Get transaction by ID  |
-| POST   | `/api/transactions`         | Create new transaction |
-| PUT    | `/api/transactions/{id}`    | Update transaction     |
-| DELETE | `/api/transactions/{id}`    | Delete transaction     |
-| GET    | `/api/transactions/summary` | Get summary statistics |
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/transactions` | Get all transactions |
+| GET | `/api/transactions/{id}` | Get transaction by ID |
+| POST | `/api/transactions` | Create new transaction |
+| PUT | `/api/transactions/{id}` | Update transaction |
+| DELETE | `/api/transactions/{id}` | Delete transaction |
+| GET | `/api/transactions/summary` | Get summary statistics |
 
 ### Request/Response Examples
 
@@ -254,9 +254,9 @@ This project is created for educational purposes.
 
 ## 👨‍💻 Author
 
-**Your Name**
-- GitHub    : [@kaushalladiya](https://github.com/kaushalladiya)
-- LinkedIn  : [@kaushalladiya](https://linkedin.com/in/kaushalladiya)
+**Kaushal Ladiya**
+- GitHub: [@kaushalladiya](https://github.com/kaushalladiya)
+- LinkedIn: [@kaushalladiya](https://linkedin.com/in/kaushalladiya)
 
 ## 🙏 Acknowledgments
 
