@@ -16,6 +16,8 @@ A full-stack web application for tracking personal income and expenses, built wi
 - ✅ View all transactions in a beautiful, responsive table
 - ✅ **Add new transactions with beautiful modal form**
 - ✅ **Delete transactions with confirmation dialog**
+- ✅ **Summary dashboard with gradient cards**
+- ✅ **Real-time statistics (Total Income, Expenses, Balance)**
 - ✅ **Form validation and error handling**
 - ✅ **Smooth animations and transitions**
 - ✅ Real-time data synchronization with backend
@@ -26,8 +28,6 @@ A full-stack web application for tracking personal income and expenses, built wi
 
 ### Coming Soon
 - 🔨 Edit existing transactions
-- 🔨 Delete transactions with confirmation
-- 🔨 Summary dashboard with total income, expenses, and balance
 - 🔨 Filter transactions by type, category, and date range
 - 🔨 Search functionality
 - 🔨 Data visualization with charts
@@ -224,9 +224,9 @@ dotnet test
 - [x] **Form validation**
 
 ### Phase 2: Enhanced Features (Week 2)
+- [x] **Summary dashboard with gradient cards**
 - [ ] Edit transactions
 - [ ] Filtering and search
-- [ ] Summary dashboard
 - [ ] Data validation
 - [ ] Error notifications
 

@@ -112,6 +112,17 @@ function App() {
     }
   }
 
+  // Calculate summary statistics
+  const totalIncome = transactions
+    .filter(t => t.type === 'Income')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const totalExpenses = transactions
+    .filter(t => t.type === 'Expense')
+    .reduce((sum, t) => sum + t.amount, 0)
+
+  const balance = totalIncome - totalExpenses
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-100">
@@ -139,8 +150,51 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-100 py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header with Add Button */}
-        <div className="mb-8 flex justify-between items-center">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-gray-900">
+            Finance Tracker
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Track your income and expenses
+          </p>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/* Total Income Card */}
+          <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold opacity-90">Total Income</h3>
+              <span className="text-3xl">💰</span>
+            </div>
+            <p className="text-3xl font-bold mb-2">₹{totalIncome.toFixed(2)}</p>
+            <p className="text-sm opacity-75">{transactions.filter(t => t.type === 'Income').length} transactions</p>
+          </div>
+
+          {/* Total Expenses Card */}
+          <div className="bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold opacity-90">Total Expenses</h3>
+              <span className="text-3xl">💸</span>
+            </div>
+            <p className="text-3xl font-bold mb-2">₹{totalExpenses.toFixed(2)}</p>
+            <p className="text-sm opacity-75">{transactions.filter(t => t.type === 'Expense').length} transactions</p>
+          </div>
+
+          {/* Balance Card */}
+          <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold opacity-90">Balance</h3>
+              <span className="text-3xl">💵</span>
+            </div>
+            <p className="text-3xl font-bold mb-2">₹{balance.toFixed(2)}</p>
+            <p className="text-sm opacity-75">{balance >= 0 ? 'Surplus' : 'Deficit'}</p>
+          </div>
+        </div>
+
+        {/* Add Transaction Button */}
+        <div className="mb-6 flex justify-end">
           <div>
             <h1 className="text-4xl font-bold text-gray-900">
               Finance Tracker
