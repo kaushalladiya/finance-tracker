@@ -1,8 +1,12 @@
 import { useState, useEffect } from 'react'
 import axios from 'axios'
 import API_BASE_URL from './config'
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from 'recharts'
+import { useTheme } from './contexts/ThemeContext'
 
 function App() {
+  const { theme, toggleTheme } = useTheme()
+  
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -194,22 +198,45 @@ function App() {
     setSearchTerm('')
   }
 
+  // Prepare data for Expense Breakdown Pie Chart
+  const expenseByCategory = transactions
+    .filter(t => t.type === 'Expense')
+    .reduce((acc, transaction) => {
+      const category = transaction.category
+      if (acc[category]) {
+        acc[category] += transaction.amount
+      } else {
+        acc[category] = transaction.amount
+      }
+      return acc
+    }, {})
+
+  const expenseChartData = Object.entries(expenseByCategory)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)  // Sort by amount (highest first)
+
+  // Prepare data for Income vs Expense comparison
+  const comparisonData = [
+    { name: 'Income', amount: totalIncome, color: '#10b981' },
+    { name: 'Expenses', amount: totalExpenses, color: '#ef4444' }
+  ]
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
-        <div className="text-xl text-gray-600">Loading...</div>
+      <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
+        <div className="text-xl text-gray-600 dark:text-gray-300">Loading...</div>
       </div>
     )
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-100">
+      <div className="flex items-center justify-center h-screen bg-gray-100 dark:bg-gray-900">
         <div className="text-center">
-          <div className="text-xl text-red-600 mb-4">{error}</div>
+          <div className="text-xl text-red-600 dark:text-red-400 mb-4">{error}</div>
           <button
             onClick={fetchTransactions}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700"
           >
             Retry
           </button>
@@ -219,11 +246,30 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 py-8 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900">Finance Tracker</h1>
-          <p className="mt-2 text-gray-600">Track your income and expenses</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">Finance Tracker</h1>
+            <p className="mt-2 text-gray-600 dark:text-gray-400">Track your income and expenses</p>
+          </div>
+          
+          {/* Theme Toggle Button */}
+          <button
+            onClick={toggleTheme}
+            className="p-3 rounded-lg bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-all duration-200 text-gray-800 dark:text-gray-200"
+            aria-label="Toggle theme"
+          >
+            {theme === 'light' ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              </svg>
+            )}
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -254,6 +300,65 @@ function App() {
             <p className="text-sm opacity-75">{balance >= 0 ? 'Surplus' : 'Deficit'}</p>
           </div>
         </div>
+
+        {/* Charts Section */}
+        {transactions.length > 0 && (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            {/* Expense Breakdown Pie Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown by Category</h3>
+              {expenseChartData.length > 0 ? (
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={expenseChartData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {expenseChartData.map((entry, index) => {
+                        const COLORS = ['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899']
+                        return <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      })}
+                    </Pie>
+                    <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="flex items-center justify-center h-[300px] text-gray-400">
+                  <div className="text-center">
+                    <svg className="w-12 h-12 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
+                    </svg>
+                    <p>No expense data yet</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Income vs Expenses Bar Chart */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Income vs Expenses</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={comparisonData}>
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+                  <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
+                    {comparisonData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
 
         <div className="mb-6 flex justify-between items-center gap-4">
           {/* Search Bar */}
