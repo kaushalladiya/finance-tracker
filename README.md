@@ -2,7 +2,7 @@
 
 A full-stack web application for tracking personal income and expenses, built with **.NET 10** and **React**. This project demonstrates modern web development practices, RESTful API design, and responsive UI/UX.
 
-![Project Status](https://img.shields.io/badge/status-in%20development-yellow)
+![Project Status](https://img.shields.io/badge/status-active%20development-brightgreen)
 ![.NET Version](https://img.shields.io/badge/.NET-10.0-blue)
 ![React Version](https://img.shields.io/badge/React-18.3-blue)
 
@@ -12,43 +12,60 @@ A full-stack web application for tracking personal income and expenses, built wi
 
 ## ✨ Features
 
-### Currently Implemented
-- ✅ View all transactions in a beautiful, responsive table
-- ✅ **Add new transactions with beautiful modal form**
-- ✅ **Delete transactions with confirmation dialog**
-- ✅ **Summary dashboard with gradient cards**
-- ✅ **Real-time statistics (Total Income, Expenses, Balance)**
-- ✅ **Form validation and error handling**
-- ✅ **Smooth animations and transitions**
-- ✅ Real-time data synchronization with backend
-- ✅ Income and expense categorization with color coding
-- ✅ Modern, clean UI with Tailwind CSS
-- ✅ Loading states and error handling
-- ✅ Date formatting and amount display
+### ✅ Implemented Features
+- **Full-Stack Architecture**: React frontend communicating with .NET 10 Web API.
+- **Advanced Reporting System**: Server-side aggregation for Monthly Trends and Comparisons using LINQ.
+- **Interactive Dashboard**:
+  - Gradient summary cards (Income, Expense, Balance).
+  - Real-time statistics.
+- **Data Visualization**:
+  - **6-Month Trend Line Charts**: Visualizes financial history using Recharts.
+  - **Expense Breakdown**: Interactive Pie Charts.
+  - **Income vs Expense**: Comparative Bar Charts.
+  - **Category Intelligence**: Ranks top spending and income sources with progress bars.
+- **Client-Side Routing**: Seamless navigation between Dashboard and Reports.
+- **Dark Mode Theme**: System-aware, persistent theme with local storage support.
+- **Complete CRUD Operations**: Create, Read, Update, Delete transactions with modal forms.
+- **Advanced Filtering**: Filter by Type, Category, and Date Range with real-time search.
+- **User Feedback**: Toast notifications and loading skeletons.
+- **Design System**: "Cascadia Mono" typography for financial precision.
 
-### Coming Soon
-- 🔨 Edit existing transactions
-- 🔨 Filter transactions by type, category, and date range
-- 🔨 Search functionality
-- 🔨 Data visualization with charts
-- 🔨 Responsive mobile design
-- 🔨 Category management
+### 🚧 In Progress
+- **Authentication System**:
+  - [x] Backend User Model & Database Setup
+  - [x] Password Hashing (BCrypt) implementation
+  - [ ] JWT Token Generation
+  - [ ] React Login/Register Forms
+  - [ ] Protected Routes
+
+## 🎨 Design Philosophy
+
+### Psychology of Money
+This project utilizes specific design choices to build trust and clarity:
+- **Visual Hierarchy**:
+  - **Green & Bold**: Used for Income and Growth (Signals safety).
+  - **Red & Bold**: Used for Expenses and Debts (Signals alert).
+  - **Regular Weight**: Used for neutral information.
+- **Typography**:
+  - **Cascadia Mono**: Used exclusively across the app. The monospaced font implies "Calculation," "Accuracy," and "Terminal-like precision," similar to professional trading platforms.
 
 ## 🛠️ Tech Stack
 
 ### Backend
 - **Framework:** .NET 10 Web API
 - **Database:** SQLite with Entity Framework Core
+- **Security:** BCrypt.Net for password hashing
 - **Architecture:** RESTful API with Repository Pattern
-- **Features:** 
-  - CRUD operations
-  - Data validation
+- **Features:** - Async/await patterns
+  - LINQ for server-side data aggregation
   - CORS configuration
-  - Async/await patterns
 
 ### Frontend
 - **Framework:** React 18.3 with Vite
+- **Routing:** React Router DOM
+- **Visualization:** Recharts
 - **Styling:** Tailwind CSS 3.4
+- **State Management:** React Context API & Hooks
 - **HTTP Client:** Axios
 - **State Management:** React Hooks (useState, useEffect)
 - **Build Tool:** Vite 7.2
@@ -75,7 +92,7 @@ A full-stack web application for tracking personal income and expenses, built wi
    # Restore dependencies
    dotnet restore
    
-   # Create database
+   # Create database and apply migrations (Users & Transactions tables)
    dotnet ef database update
    
    # Run the API
@@ -129,53 +146,15 @@ FinanceTracker/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/transactions` | Get all transactions |
+| GET | `/api/transactions` | Get all transactions with filtering |
 | GET | `/api/transactions/{id}` | Get transaction by ID |
 | POST | `/api/transactions` | Create new transaction |
 | PUT | `/api/transactions/{id}` | Update transaction |
 | DELETE | `/api/transactions/{id}` | Delete transaction |
 | GET | `/api/transactions/summary` | Get summary statistics |
-
-### Request/Response Examples
-
-**Create Transaction (POST /api/transactions)**
-```json
-{
-  "description": "Monthly Salary",
-  "amount": 5000,
-  "date": "2024-12-14T00:00:00",
-  "type": "Income",
-  "category": "Salary"
-}
-```
-
-**Response (201 Created)**
-```json
-{
-  "id": 1,
-  "description": "Monthly Salary",
-  "amount": 5000.00,
-  "date": "2024-12-14T00:00:00",
-  "type": "Income",
-  "category": "Salary"
-}
-```
-
-## 🎨 UI Features
-
-### Design Principles
-- Clean, modern interface
-- Intuitive navigation
-- Responsive layout
-- Smooth animations
-- Color-coded transactions (Green for income, Red for expenses)
-
-### Tailwind CSS Components
-- Custom color scheme
-- Responsive grid system
-- Hover effects
-- Loading states
-- Error boundaries
+| GET | `/api/transactions/reports/monthly` | Get 6-month trend data |
+| GET | `/api/transactions/reports/comparison` | Compare current month vs previous/last year |
+| GET | `/api/transactions/reports/top-categories` | Get top 5 income/expense sources |
 
 ## 🧪 Testing
 
@@ -189,80 +168,18 @@ dotnet test
 - Swagger UI available at `http://localhost:5260/swagger`
 - Interactive API documentation and testing
 
-## 📚 What I Learned
-
-### Backend Development
-- Building RESTful APIs with .NET 10
-- Entity Framework Core and database migrations
-- Async/await patterns for better performance
-- Data validation and error handling
-- CORS configuration for cross-origin requests
-
-### Frontend Development
-- React hooks (useState, useEffect)
-- Component-based architecture
-- API integration with Axios
-- Tailwind CSS for rapid UI development
-- State management in React
-
-### Full-Stack Integration
-- Connecting React frontend to .NET backend
-- Handling API responses and errors
-- Managing loading states
-- CORS policy configuration
-
-## 🚧 Development Roadmap
-
-### Phase 1: Core Features (Week 1)
-- [x] Backend API setup
-- [x] Database configuration
-- [x] CRUD operations
-- [x] Frontend setup
-- [x] Display transactions
-- [x] **Add transaction form with modal**
-- [x] **Delete functionality with confirmation**
-- [x] **Form validation**
-
-### Phase 2: Enhanced Features (Week 2)
-- [x] **Summary dashboard with gradient cards**
-- [ ] Edit transactions
-- [ ] Filtering and search
-- [ ] Data validation
-- [ ] Error notifications
-
-### Phase 3: Advanced Features (Week 3)
-- [ ] Charts and graphs
-- [ ] Category management
-- [ ] Date range filters
-- [ ] Export to CSV
-- [ ] Print functionality
-
-### Phase 4: Polish (Week 4)
-- [ ] Mobile responsiveness
-- [ ] Loading animations
-- [ ] User preferences
-- [ ] Dark mode
-- [ ] Performance optimization
-
-## 🤝 Contributing
-
-This is a personal learning project, but feedback and suggestions are welcome!
-
-## 📝 License
-
-This project is created for educational purposes.
-
 ## 👨‍💻 Author
 
 **Kaushal Ladiya**
-- GitHub: [@kaushalladiya](https://github.com/kaushalladiya)
-- LinkedIn: [@kaushalladiya](https://linkedin.com/in/kaushalladiya)
+
+* GitHub : [@kaushalladiya](https://github.com/kaushalladiya)
+* LinkedIn : [@kaushalladiya](https://linkedin.com/in/kaushalladiya)
 
 ## 🙏 Acknowledgments
 
-- Built as part of full-stack development learning journey
-- Thanks to the .NET and React communities for excellent documentation
-- Tailwind CSS for making styling enjoyable
+* Built as part of full-stack development learning journey
+* Thanks to the .NET and React communities for excellent documentation
+* Tailwind CSS for making styling enjoyable
 
 ---
 
