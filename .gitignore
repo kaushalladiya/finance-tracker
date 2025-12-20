@@ -8,6 +8,8 @@ obj/
 *.log
 *.dll
 *.exe
+*.userosscache
+*.sln.docstates
 [Dd]ebug/
 [Rr]elease/
 
@@ -37,6 +39,7 @@ build/
 .env.development.local
 .env.test.local
 .env.production.local
+appsettings.Development.json
 
 # OS
 .DS_Store

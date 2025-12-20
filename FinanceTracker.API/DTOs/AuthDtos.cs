@@ -18,7 +18,7 @@ namespace FinanceTracker.API.DTOs
         public string Password { get; set; } = string.Empty;
     }
 
-    // What the user sends to LOGIN
+    // What user sends to LOGIN
     public class LoginDto
     {
         [Required]

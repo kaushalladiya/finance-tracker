@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react'
 import axios from 'axios'
 import API_BASE_URL from './config'
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts'
-import { formatDate } from './utils/dateUtils'
+import { useAuth } from './contexts/AuthContext'
 
 function Dashboard() {
+  const { user } = useAuth()
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
@@ -172,35 +173,109 @@ function Dashboard() {
     setSearchTerm('')
   }
 
-  if (loading) return <div className="text-center py-10 text-gray-600 dark:text-gray-300">Loading dashboard...</div>
-  if (error) return <div className="text-center py-10 text-red-600 dark:text-red-400">{error}</div>
+  if (loading) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh] animate-pulse">
+      <div className="text-4xl mb-4">💰</div>
+      <div className="text-lg text-gray-500 font-mono">Loading your vault...</div>
+    </div>
+  )
 
+  if (error) return (
+    <div className="flex flex-col items-center justify-center min-h-[60vh]">
+      <div className="text-4xl mb-4 text-red-500">⚠️</div>
+      <div className="text-lg text-red-600 font-bold mb-2">Connection Error</div>
+      <p className="text-gray-500">{error}</p>
+    </div>
+  )
+
+  // Smart Empty State
+  if (transactions.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] text-center space-y-6 animate-slide-up">
+        <div className="bg-blue-50 dark:bg-gray-800 p-8 rounded-full">
+          <span className="text-6xl">📊</span>
+        </div>
+        <div className="max-w-md space-y-2">
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome, {user?.username}!</h2>
+          <p className="text-gray-500 dark:text-gray-400">
+            Your financial dashboard is looking a bit empty. Add your first transaction to unlock powerful insights and charts.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-8 py-4 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-200 flex items-center gap-2 group"
+        >
+          <span>+ Add First Transaction</span>
+          <span className="group-hover:rotate-90 transition-transform duration-200">➔</span>
+        </button>
+
+        {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 text-left">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6 animate-slide-up">
+            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">Add Transaction</h2>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+              <input name="amount" type="number" step="0.01" value={formData.amount} onChange={handleInputChange} placeholder="Amount" required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+              <input name="date" type="date" value={formData.date} onChange={handleInputChange} required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+              <div className="flex gap-4">
+                <select name="type" value={formData.type} onChange={handleInputChange} className="flex-1 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500">
+                  <option>Expense</option><option>Income</option>
+                </select>
+                <input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category" required className="flex-1 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div className="flex gap-3 pt-4">
+                <button type="button" onClick={handleCloseModal} className="flex-1 py-3 border rounded-lg text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-lg">{isSubmitting ? 'Saving...' : 'Save Record'}</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      </div>
+    )
+  }
+
+  // STANDARD DASHBOARD UI
   return (
-    <div className="space-y-6 animate-slide-up">
-      {/* Stats Cards */}
+    <div className="space-y-6 animate-slide-up pb-12">
+      {/* Header with Welcome Message */}
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+          <p className="text-gray-500 dark:text-gray-400">Welcome back, {user?.username}</p>
+        </div>
+        <button
+          onClick={() => setShowModal(true)}
+          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all flex items-center gap-2"
+        >
+          <span>+</span> <span className="hidden sm:inline">Add Transaction</span>
+        </button>
+      </div>
+
+      {/* Stats Cards - Removed 'font-mono' so it uses global Cascadia Code */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-400 to-green-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+        <div className="bg-gradient-to-br from-green-500 to-green-700 rounded-xl shadow-lg p-6 text-white transform hover:scale-[1.02] transition-transform duration-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold opacity-90">Total Income</h3>
-            <span className="text-3xl">💰</span>
+            <span className="text-3xl opacity-80">💰</span>
           </div>
           <p className="text-3xl font-bold mb-2">₹{totalIncome.toFixed(2)}</p>
           <p className="text-sm opacity-75">{transactions.filter(t => t.type === 'Income').length} transactions</p>
         </div>
 
-        <div className="bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+        <div className="bg-gradient-to-br from-red-500 to-red-700 rounded-xl shadow-lg p-6 text-white transform hover:scale-[1.02] transition-transform duration-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold opacity-90">Total Expenses</h3>
-            <span className="text-3xl">💸</span>
+            <span className="text-3xl opacity-80">💸</span>
           </div>
           <p className="text-3xl font-bold mb-2">₹{totalExpenses.toFixed(2)}</p>
           <p className="text-sm opacity-75">{transactions.filter(t => t.type === 'Expense').length} transactions</p>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg p-6 text-white transform hover:scale-105 transition-transform duration-200">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-700 rounded-xl shadow-lg p-6 text-white transform hover:scale-[1.02] transition-transform duration-200">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold opacity-90">Balance</h3>
-            <span className="text-3xl">💵</span>
+            <span className="text-3xl opacity-80">💵</span>
           </div>
           <p className="text-3xl font-bold mb-2">₹{balance.toFixed(2)}</p>
           <p className="text-sm opacity-75">{balance >= 0 ? 'Surplus' : 'Deficit'}</p>
@@ -208,18 +283,19 @@ function Dashboard() {
       </div>
 
       {/* Charts Section */}
-      {transactions.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Expense Breakdown</h3>
-            <ResponsiveContainer width="100%" height={300}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Expense Breakdown</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={expenseChartData}
                   cx="50%"
                   cy="50%"
+                  innerRadius={60}
                   outerRadius={100}
-                  fill="#8884d8"
+                  paddingAngle={5}
                   dataKey="value"
                   label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                 >
@@ -227,18 +303,26 @@ function Dashboard() {
                     <Cell key={`cell-${index}`} fill={['#ef4444', '#f59e0b', '#10b981', '#3b82f6', '#8b5cf6'][index % 5]} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+                <Tooltip 
+                  formatter={(value) => `₹${value.toFixed(2)}`}
+                  contentStyle={{ backgroundColor: '#1f2937', color: '#fff', border: 'none', borderRadius: '8px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </div>
+        </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 transition-colors duration-200">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Income vs Expenses</h3>
-            <ResponsiveContainer width="100%" height={300}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700">
+          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-6">Income vs Expenses</h3>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={comparisonData}>
-                <XAxis dataKey="name" stroke="#888" />
-                <YAxis stroke="#888" />
-                <Tooltip formatter={(value) => `₹${value.toFixed(2)}`} />
+                <XAxis dataKey="name" stroke="#6b7280" tickLine={false} axisLine={false} />
+                <YAxis stroke="#6b7280" tickLine={false} axisLine={false} />
+                <Tooltip 
+                  cursor={{fill: 'transparent'}}
+                  contentStyle={{ backgroundColor: '#1f2937', color: '#fff', border: 'none', borderRadius: '8px' }}
+                />
                 <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
                   {comparisonData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -248,89 +332,79 @@ function Dashboard() {
             </ResponsiveContainer>
           </div>
         </div>
-      )}
-
-      {/* Controls & Search */}
-      <div className="flex justify-between items-center gap-4">
-        <div className="flex-1 max-w-md relative">
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search transactions..."
-            className="w-full pl-4 pr-10 py-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        <button
-          onClick={() => setShowModal(true)}
-          className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg shadow-lg hover:from-blue-600 hover:to-blue-700 transform hover:scale-105 transition-all"
-        >
-          + Add Transaction
-        </button>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
-          {/* Filter inputs... */}
-          <div className="flex-1">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+      {/* Controls & Search */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-100 dark:border-gray-700">
+        <div className="flex flex-col md:flex-row gap-4 justify-between items-center mb-6">
+          <div className="relative w-full md:w-96">
+            <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">🔍</span>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search transactions..."
+              className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-none rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+          </div>
+          
+          <div className="flex gap-2">
             <select
               value={filters.type}
               onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+              className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-none rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
             >
-              <option value="All">All</option>
+              <option value="All">All Types</option>
               <option value="Income">Income</option>
               <option value="Expense">Expense</option>
             </select>
-          </div>
-           {/* Simplification: I'm trusting you to copy the Category, Dates, and Clear button logic similarly or use previous file logic for inputs if preferred. Keeping it brief for readability, but the critical part is below */}
-           <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
-              <select 
-                value={filters.category}
-                onChange={(e) => setFilters(prev => ({...prev, category: e.target.value}))}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-              >
-                <option value="All">All</option>
-                {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
-           </div>
-           <div className="flex-1">
-             <button onClick={clearFilters} className="w-full px-4 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white rounded-md hover:bg-gray-300 dark:hover:bg-gray-500">Clear</button>
-           </div>
-        </div>
-      </div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+            <select 
+              value={filters.category}
+              onChange={(e) => setFilters(prev => ({...prev, category: e.target.value}))}
+              className="px-4 py-2 bg-gray-50 dark:bg-gray-700 border-none rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            >
+              <option value="All">All Categories</option>
+              {uniqueCategories.map(c => <option key={c} value={c}>{c}</option>)}
+            </select>
+          </div>
+        </div>
+
+        {/* Table */}
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-700">
-              <tr>
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-gray-200 dark:border-gray-700">
                 {['Date', 'Description', 'Category', 'Type', 'Amount', 'Actions'].map(h => (
-                  <th key={h} className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">{h}</th>
+                  <th key={h} className="px-6 py-4 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
               {filteredTransactions.map((transaction) => {
                 const isIncome = transaction.type === 'Income'
                 return (
-                  <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{new Date(transaction.date).toLocaleDateString()}</td>
-                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100">{transaction.description}</td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">{transaction.category}</td>
+                  <tr key={transaction.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 font-mono">
+                      {new Date(transaction.date).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-900 dark:text-gray-100 font-medium">
+                      {transaction.description}
+                    </td>
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                      <span className="bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded text-xs">
+                        {transaction.category}
+                      </span>
+                    </td>
                     <td className="px-6 py-4">
-                      <span className={`px-2 text-xs font-semibold rounded-full ${isIncome ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                      <span className={`px-2 py-1 text-xs font-semibold rounded-full ${isIncome ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'}`}>
                         {transaction.type}
                       </span>
                     </td>
-                    <td className={`px-6 py-4 text-sm font-medium ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                      ₹{transaction.amount.toFixed(2)}
+                    <td className={`px-6 py-4 text-sm font-bold font-mono ${isIncome ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                      {isIncome ? '+' : '-'}₹{transaction.amount.toFixed(2)}
                     </td>
-                    <td className="px-6 py-4 text-sm font-medium space-x-3">
+                    <td className="px-6 py-4 text-sm font-medium space-x-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button onClick={() => handleEdit(transaction)} className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300">Edit</button>
                       <button onClick={() => setDeleteId(transaction.id)} className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300">Delete</button>
                     </td>
@@ -339,27 +413,55 @@ function Dashboard() {
               })}
             </tbody>
           </table>
+          
+          {filteredTransactions.length === 0 && (
+            <div className="text-center py-12 text-gray-500 dark:text-gray-400">
+              No transactions match your search.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Modals & Toast */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
-            <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-white">{editingTransaction ? 'Edit' : 'Add'} Transaction</h2>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl max-w-md w-full p-6 animate-slide-up">
+            <h2 className="text-2xl font-bold mb-6 text-gray-900 dark:text-white border-b pb-4 dark:border-gray-700">
+              {editingTransaction ? 'Edit Transaction' : 'New Transaction'}
+            </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input name="description" value={formData.description} onChange={handleInputChange} placeholder="Description" required className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-              <input name="amount" type="number" step="0.01" value={formData.amount} onChange={handleInputChange} placeholder="Amount" required className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-              <input name="date" type="date" value={formData.date} onChange={handleInputChange} required className="w-full p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
-              <div className="flex gap-4">
-                <select name="type" value={formData.type} onChange={handleInputChange} className="flex-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white">
-                  <option>Expense</option><option>Income</option>
-                </select>
-                <input name="category" value={formData.category} onChange={handleInputChange} placeholder="Category" required className="flex-1 p-2 border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white" />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Description</label>
+                <input name="description" value={formData.description} onChange={handleInputChange} placeholder="e.g. Grocery Shopping" required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
               </div>
-              <div className="flex gap-3 pt-4">
-                <button type="button" onClick={handleCloseModal} className="flex-1 py-2 border rounded text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700">Cancel</button>
-                <button type="submit" disabled={isSubmitting} className="flex-1 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">{isSubmitting ? 'Saving...' : 'Save'}</button>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                   <input name="amount" type="number" step="0.01" value={formData.amount} onChange={handleInputChange} placeholder="0.00" required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all font-mono" />
+                </div>
+                <div>
+                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                   <input name="date" type="date" value={formData.date} onChange={handleInputChange} required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Type</label>
+                  <select name="type" value={formData.type} onChange={handleInputChange} className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all">
+                    <option>Expense</option><option>Income</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                  <input name="category" value={formData.category} onChange={handleInputChange} placeholder="e.g. Food" required className="w-full p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-all" />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-6">
+                <button type="button" onClick={handleCloseModal} className="flex-1 py-3 border rounded-lg text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 font-semibold transition-colors">Cancel</button>
+                <button type="submit" disabled={isSubmitting} className="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold shadow-md hover:shadow-lg transition-all">{isSubmitting ? 'Saving...' : 'Save Record'}</button>
               </div>
             </form>
           </div>
@@ -367,20 +469,22 @@ function Dashboard() {
       )}
 
       {deleteId && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-sm w-full text-center">
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2">Delete Transaction?</h3>
-            <p className="text-gray-500 dark:text-gray-400 mb-6">This action cannot be undone.</p>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 rounded-xl p-8 max-w-sm w-full text-center shadow-2xl animate-slide-up">
+            <div className="text-5xl mb-4">🗑️</div>
+            <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2">Delete Transaction?</h3>
+            <p className="text-gray-500 dark:text-gray-400 mb-6">This action cannot be undone. Are you sure?</p>
             <div className="flex gap-3">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 border rounded text-gray-700 dark:text-gray-300">Cancel</button>
-              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2 bg-red-600 text-white rounded hover:bg-red-700">{isDeleting ? '...' : 'Delete'}</button>
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 border rounded-lg text-gray-700 dark:text-gray-300 dark:border-gray-600 hover:bg-gray-50 font-medium">Cancel</button>
+              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium shadow-md">{isDeleting ? '...' : 'Delete'}</button>
             </div>
           </div>
         </div>
       )}
 
       {toast.show && (
-        <div className={`fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg text-white ${toast.type === 'success' ? 'bg-green-500' : 'bg-red-500'} animate-slide-up`}>
+        <div className={`fixed bottom-6 right-6 px-6 py-4 rounded-xl shadow-2xl text-white font-medium flex items-center gap-3 ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} animate-slide-up`}>
+          <span>{toast.type === 'success' ? '✅' : '❌'}</span>
           {toast.message}
         </div>
       )}

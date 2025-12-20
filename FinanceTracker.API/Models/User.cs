@@ -15,9 +15,5 @@ namespace FinanceTracker.API.Models
 
         [Required]
         public string PasswordHash { get; set; } = string.Empty;
-
-        // Relationship: One User has Many Transactions
-        // We will link this later to filter data by user!
-        // public List<Transaction> Transactions { get; set; }
     }
 }

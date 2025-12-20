@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace FinanceTracker.API.Models
 {
@@ -24,5 +26,11 @@ namespace FinanceTracker.API.Models
         [Required(ErrorMessage = "Category is required")]
         [StringLength(50, MinimumLength = 2, ErrorMessage = "Category must be between 2 and 50 characters")]
         public string Category { get; set; } = string.Empty;
+
+        public int UserId { get; set; }
+
+        [JsonIgnore]
+        [ForeignKey("UserId")]
+        public User? User { get; set; }
     }
 }

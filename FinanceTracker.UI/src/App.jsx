@@ -1,11 +1,15 @@
-import { BrowserRouter as Router, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import { useTheme } from './contexts/ThemeContext'
+import { useAuth } from './contexts/AuthContext'
 import Dashboard from './Dashboard'
 import Reports from './Reports'
+import Login from './Login'
+import Register from './Register'
 
-// Navigation Component
+// Navigation Component (Only shown when logged in)
 const Navbar = () => {
   const { theme, toggleTheme } = useTheme()
+  const { logout, user } = useAuth()
   const location = useLocation()
 
   const isActive = (path) => location.pathname === path 
@@ -33,6 +37,21 @@ const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* User Info */}
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:block">
+               Hi, {user?.username}
+            </span>
+
+            {/* Logout Button */}
+            <button
+               onClick={logout}
+               className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"
+            >
+              Logout
+            </button>
+
+            <div className="h-6 w-px bg-gray-200 dark:bg-gray-700"></div>
+
             <button
               onClick={toggleTheme}
               className="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-gray-600 dark:text-gray-200"
@@ -55,15 +74,43 @@ const Navbar = () => {
   )
 }
 
+// This checks: Do you have a wristband (isAuthenticated)?
+// If NO -> Go to Login
+// If YES -> Show the page
+const ProtectedRoute = ({ children }) => {
+  const { isAuthenticated } = useAuth()
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />
+  }
+  return children
+}
+
 function App() {
+  const { isAuthenticated } = useAuth()
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors duration-200 font-sans">
-        <Navbar />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Only show Navbar if logged in */}
+        {isAuthenticated && <Navbar />}
+        
+        <main className={isAuthenticated ? "max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8" : ""}>
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/reports" element={<Reports />} />
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            
+            {/* Protected Routes */}
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <Reports />
+              </ProtectedRoute>
+            } />
           </Routes>
         </main>
       </div>

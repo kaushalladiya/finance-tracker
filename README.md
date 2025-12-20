@@ -14,6 +14,14 @@ A full-stack web application for tracking personal income and expenses, built wi
 
 ### ✅ Implemented Features
 - **Full-Stack Architecture**: React frontend communicating with .NET 10 Web API.
+- **Secure Authentication (End-to-End)**:
+  - [x] JWT (JSON Web Token) implementation.
+  - [x] BCrypt Password Hashing.
+  - [x] React Login/Register Forms.
+  - [x] Protected Routes (Global Axios Interceptor).
+- **UX & Design**:
+  - [x] **Smart Empty States**: Welcoming "Zero Data" experience with Call-to-Action.
+  - [x] **Monospace Typography**: "Cascadia Code" for financial precision.
 - **Advanced Reporting System**: Server-side aggregation for Monthly Trends and Comparisons using LINQ.
 - **Interactive Dashboard**:
   - Gradient summary cards (Income, Expense, Balance).
@@ -28,15 +36,6 @@ A full-stack web application for tracking personal income and expenses, built wi
 - **Complete CRUD Operations**: Create, Read, Update, Delete transactions with modal forms.
 - **Advanced Filtering**: Filter by Type, Category, and Date Range with real-time search.
 - **User Feedback**: Toast notifications and loading skeletons.
-- **Design System**: "Cascadia Mono" typography for financial precision.
-
-### 🚧 In Progress
-- **Authentication System**:
-  - [x] Backend User Model & Database Setup
-  - [x] Password Hashing (BCrypt) implementation
-  - [ ] JWT Token Generation
-  - [ ] React Login/Register Forms
-  - [ ] Protected Routes
 
 ## 🎨 Design Philosophy
 
@@ -47,16 +46,17 @@ This project utilizes specific design choices to build trust and clarity:
   - **Red & Bold**: Used for Expenses and Debts (Signals alert).
   - **Regular Weight**: Used for neutral information.
 - **Typography**:
-  - **Cascadia Mono**: Used exclusively across the app. The monospaced font implies "Calculation," "Accuracy," and "Terminal-like precision," similar to professional trading platforms.
+  - **Cascadia Code**: Used exclusively across the app. The monospaced font implies "Calculation," "Accuracy," and "Terminal-like precision," similar to professional trading platforms.
 
 ## 🛠️ Tech Stack
 
 ### Backend
 - **Framework:** .NET 10 Web API
 - **Database:** SQLite with Entity Framework Core
-- **Security:** BCrypt.Net for password hashing
+- **Security:** BCrypt.Net for password hashing, JWT Bearer Tokens
 - **Architecture:** RESTful API with Repository Pattern
-- **Features:** - Async/await patterns
+- **Features:**
+  - Async/await patterns
   - LINQ for server-side data aggregation
   - CORS configuration
 
@@ -66,8 +66,7 @@ This project utilizes specific design choices to build trust and clarity:
 - **Visualization:** Recharts
 - **Styling:** Tailwind CSS 3.4
 - **State Management:** React Context API & Hooks
-- **HTTP Client:** Axios
-- **State Management:** React Hooks (useState, useEffect)
+- **HTTP Client:** Axios (with Interceptors)
 - **Build Tool:** Vite 7.2
 
 ## 🚀 Getting Started
@@ -121,10 +120,12 @@ This project utilizes specific design choices to build trust and clarity:
 FinanceTracker/
 ├── FinanceTracker.API/          # .NET Backend
 │   ├── Controllers/             # API endpoints
+│   │   ├── AuthController.cs    # Authentication Logic
 │   │   └── TransactionsController.cs
 │   ├── Data/                    # Database context
 │   │   └── AppDbContext.cs
 │   ├── Models/                  # Data models
+│   │   ├── User.cs
 │   │   └── Transaction.cs
 │   ├── Migrations/              # EF Core migrations
 │   ├── Program.cs               # App configuration
@@ -132,15 +133,29 @@ FinanceTracker/
 │
 └── FinanceTracker.UI/           # React Frontend
     ├── src/
+    │   ├── contexts/
+    │   │   ├── AuthContext.jsx  # Auth State
+    │   │   └── ThemeContext.jsx
     │   ├── App.jsx              # Main component
+    │   ├── Dashboard.jsx        # Smart Dashboard
+    │   ├── Login.jsx            # Login Page
+    │   ├── Register.jsx         # Register Page
     │   ├── config.js            # API configuration
-    │   ├── index.css            # Global styles
+    │   ├── index.css            # Global styles (Cascadia Code)
     │   └── main.jsx             # App entry point
     ├── tailwind.config.js       # Tailwind configuration
     └── package.json             # Dependencies
+
 ```
 
 ## 🔌 API Endpoints
+
+### Authentication
+
+| Method | Endpoint | Description |
+| --- | --- | --- |
+| POST | `/api/auth/register` | Register a new user |
+| POST | `/api/auth/login` | Login and receive JWT Token |
 
 ### Transactions
 

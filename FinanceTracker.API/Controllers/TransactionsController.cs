@@ -2,16 +2,28 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FinanceTracker.API.Data;
 using FinanceTracker.API.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FinanceTracker.API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")]
     public class TransactionsController(AppDbContext context) : ControllerBase
     {
         private readonly AppDbContext _context = context;
 
-        // GET: api/transactions?type=Income&category=Salary&startDate=2024-01-01&endDate=2024-12-31
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst("id");
+            if (userIdClaim == null)
+            {
+                throw new Exception("User ID not found in token");
+            }
+            return int.Parse(userIdClaim.Value);
+        }
+
+        // GET: api/transactions
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Transaction>>> GetTransactions(
             [FromQuery] string? type = null,
@@ -19,7 +31,8 @@ namespace FinanceTracker.API.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            var query = _context.Transactions.AsQueryable();
+            var userId = GetCurrentUserId();
+            var query = _context.Transactions.Where(t => t.UserId == userId);
 
             if (!string.IsNullOrEmpty(type))
             {
@@ -54,7 +67,8 @@ namespace FinanceTracker.API.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null)
         {
-            var query = _context.Transactions.AsQueryable();
+            var userId = GetCurrentUserId();
+            var query = _context.Transactions.Where(t => t.UserId == userId);
 
             if (startDate.HasValue)
             {
@@ -89,15 +103,16 @@ namespace FinanceTracker.API.Controllers
             return Ok(summary);
         }
 
-        // GET: api/transactions/reports/monthly?months=12
+        // GET: api/transactions/reports/monthly
         [HttpGet("reports/monthly")]
         public async Task<ActionResult> GetMonthlyReports([FromQuery] int months = 12)
         {
+            var userId = GetCurrentUserId();
             var endDate = DateTime.Now;
             var startDate = endDate.AddMonths(-months);
 
             var transactions = await _context.Transactions
-                .Where(t => t.Date >= startDate && t.Date <= endDate)
+                .Where(t => t.UserId == userId && t.Date >= startDate && t.Date <= endDate)
                 .OrderBy(t => t.Date)
                 .ToListAsync();
 
@@ -115,9 +130,7 @@ namespace FinanceTracker.API.Controllers
                     totalExpense = g.Where(t => t.Type == "Expense").Sum(t => t.Amount),
                     balance = g.Where(t => t.Type == "Income").Sum(t => t.Amount) - 
                              g.Where(t => t.Type == "Expense").Sum(t => t.Amount),
-                    transactionCount = g.Count(),
-                    incomeCount = g.Count(t => t.Type == "Income"),
-                    expenseCount = g.Count(t => t.Type == "Expense")
+                    transactionCount = g.Count()
                 })
                 .OrderBy(m => m.year)
                 .ThenBy(m => m.month)
@@ -126,95 +139,65 @@ namespace FinanceTracker.API.Controllers
             return Ok(monthlyData);
         }
 
-        // GET: api/transactions/reports/comparison?year=2024&month=12
+        // GET: api/transactions/reports/comparison
         [HttpGet("reports/comparison")]
         public async Task<ActionResult> GetMonthComparison(
             [FromQuery] int? year = null,
             [FromQuery] int? month = null)
         {
+            var userId = GetCurrentUserId();
             var targetDate = year.HasValue && month.HasValue 
                 ? new DateTime(year.Value, month.Value, 1)
                 : new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
 
             var currentMonthStart = targetDate;
             var currentMonthEnd = currentMonthStart.AddMonths(1).AddDays(-1);
-
-            var previousMonthStart = currentMonthStart.AddMonths(-1);
-            var previousMonthEnd = previousMonthStart.AddMonths(1).AddDays(-1);
-
             var lastYearMonthStart = currentMonthStart.AddYears(-1);
-            var lastYearMonthEnd = lastYearMonthStart.AddMonths(1).AddDays(-1);
-
+            
+            // Fetch 13 months of data to cover all comparison periods in one go
             var allTransactions = await _context.Transactions
-                .Where(t => t.Date >= lastYearMonthStart && t.Date <= currentMonthEnd)
+                .Where(t => t.UserId == userId && t.Date >= lastYearMonthStart && t.Date <= currentMonthEnd)
                 .ToListAsync();
-
+            
             var currentMonth = allTransactions
                 .Where(t => t.Date >= currentMonthStart && t.Date <= currentMonthEnd)
                 .ToList();
-
-            var currentIncome = currentMonth.Where(t => t.Type == "Income").Sum(t => t.Amount);
-            var currentExpense = currentMonth.Where(t => t.Type == "Expense").Sum(t => t.Amount);
-
+            
+            var previousMonthStart = currentMonthStart.AddMonths(-1);
+            var previousMonthEnd = previousMonthStart.AddMonths(1).AddDays(-1);
+            
             var previousMonth = allTransactions
                 .Where(t => t.Date >= previousMonthStart && t.Date <= previousMonthEnd)
                 .ToList();
 
-            var previousIncome = previousMonth.Where(t => t.Type == "Income").Sum(t => t.Amount);
-            var previousExpense = previousMonth.Where(t => t.Type == "Expense").Sum(t => t.Amount);
-
+            var lastYearMonthEnd = lastYearMonthStart.AddMonths(1).AddDays(-1);
             var lastYearMonth = allTransactions
                 .Where(t => t.Date >= lastYearMonthStart && t.Date <= lastYearMonthEnd)
                 .ToList();
 
+            // Calculate Totals
+            var currentIncome = currentMonth.Where(t => t.Type == "Income").Sum(t => t.Amount);
+            var currentExpense = currentMonth.Where(t => t.Type == "Expense").Sum(t => t.Amount);
+            
+            var previousIncome = previousMonth.Where(t => t.Type == "Income").Sum(t => t.Amount);
+            var previousExpense = previousMonth.Where(t => t.Type == "Expense").Sum(t => t.Amount);
+            
             var lastYearIncome = lastYearMonth.Where(t => t.Type == "Income").Sum(t => t.Amount);
             var lastYearExpense = lastYearMonth.Where(t => t.Type == "Expense").Sum(t => t.Amount);
 
-            var incomeGrowthVsPrevious = previousIncome > 0 
-                ? ((currentIncome - previousIncome) / previousIncome) * 100 
-                : 0;
-
-            var expenseGrowthVsPrevious = previousExpense > 0 
-                ? ((currentExpense - previousExpense) / previousExpense) * 100 
-                : 0;
-
-            var incomeGrowthVsLastYear = lastYearIncome > 0 
-                ? ((currentIncome - lastYearIncome) / lastYearIncome) * 100 
-                : 0;
-
-            var expenseGrowthVsLastYear = lastYearExpense > 0 
-                ? ((currentExpense - lastYearExpense) / lastYearExpense) * 100 
-                : 0;
+            // Growth Calcs
+            var incomeGrowthVsPrevious = previousIncome > 0 ? ((currentIncome - previousIncome) / previousIncome) * 100 : 0;
+            var expenseGrowthVsPrevious = previousExpense > 0 ? ((currentExpense - previousExpense) / previousExpense) * 100 : 0;
+            var incomeGrowthVsLastYear = lastYearIncome > 0 ? ((currentIncome - lastYearIncome) / lastYearIncome) * 100 : 0;
+            var expenseGrowthVsLastYear = lastYearExpense > 0 ? ((currentExpense - lastYearExpense) / lastYearExpense) * 100 : 0;
 
             var comparison = new
             {
-                currentMonth = new
-                {
-                    period = $"{currentMonthStart:MMM yyyy}",
-                    income = currentIncome,
-                    expense = currentExpense,
-                    balance = currentIncome - currentExpense,
-                    transactionCount = currentMonth.Count
-                },
-                previousMonth = new
-                {
-                    period = $"{previousMonthStart:MMM yyyy}",
-                    income = previousIncome,
-                    expense = previousExpense,
-                    balance = previousIncome - previousExpense,
-                    transactionCount = previousMonth.Count
-                },
-                lastYearMonth = new
-                {
-                    period = $"{lastYearMonthStart:MMM yyyy}",
-                    income = lastYearIncome,
-                    expense = lastYearExpense,
-                    balance = lastYearIncome - lastYearExpense,
-                    transactionCount = lastYearMonth.Count
-                },
-                growth = new
-                {
-                    incomeVsPrevious = Math.Round(incomeGrowthVsPrevious, 2),
+                currentMonth = new { period = $"{currentMonthStart:MMM yyyy}", income = currentIncome, expense = currentExpense, balance = currentIncome - currentExpense },
+                previousMonth = new { period = $"{previousMonthStart:MMM yyyy}", income = previousIncome, expense = previousExpense },
+                lastYearMonth = new { period = $"{lastYearMonthStart:MMM yyyy}", income = lastYearIncome, expense = lastYearExpense },
+                growth = new { 
+                    incomeVsPrevious = Math.Round(incomeGrowthVsPrevious, 2), 
                     expenseVsPrevious = Math.Round(expenseGrowthVsPrevious, 2),
                     incomeVsLastYear = Math.Round(incomeGrowthVsLastYear, 2),
                     expenseVsLastYear = Math.Round(expenseGrowthVsLastYear, 2)
@@ -224,13 +207,14 @@ namespace FinanceTracker.API.Controllers
             return Ok(comparison);
         }
 
-        // GET: api/transactions/reports/top-categories?year=2024&month=12&limit=5
+        // GET: api/transactions/reports/top-categories
         [HttpGet("reports/top-categories")]
         public async Task<ActionResult> GetTopCategories(
             [FromQuery] int? year = null,
             [FromQuery] int? month = null,
             [FromQuery] int limit = 5)
         {
+            var userId = GetCurrentUserId();
             var targetDate = year.HasValue && month.HasValue 
                 ? new DateTime(year.Value, month.Value, 1)
                 : new DateTime(DateTime.Now.Year, DateTime.Now.Month, 1);
@@ -239,7 +223,7 @@ namespace FinanceTracker.API.Controllers
             var monthEnd = monthStart.AddMonths(1).AddDays(-1);
 
             var transactions = await _context.Transactions
-                .Where(t => t.Date >= monthStart && t.Date <= monthEnd)
+                .Where(t => t.UserId == userId && t.Date >= monthStart && t.Date <= monthEnd)
                 .ToListAsync();
 
             var topExpenses = transactions
@@ -274,19 +258,16 @@ namespace FinanceTracker.API.Controllers
                 .Take(limit)
                 .ToList();
 
-            return Ok(new
-            {
-                period = $"{monthStart:MMM yyyy}",
-                topExpenses,
-                topIncome
-            });
+            return Ok(new { period = $"{monthStart:MMM yyyy}", topExpenses, topIncome });
         }
 
         // GET: api/transactions/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Transaction>> GetTransaction(int id)
         {
-            var transaction = await _context.Transactions.FindAsync(id);
+            var userId = GetCurrentUserId();
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
             if (transaction == null)
             {
@@ -300,6 +281,9 @@ namespace FinanceTracker.API.Controllers
         [HttpPost]
         public async Task<ActionResult<Transaction>> CreateTransaction(Transaction transaction)
         {
+            var userId = GetCurrentUserId();
+            transaction.UserId = userId;
+            
             _context.Transactions.Add(transaction);
             await _context.SaveChangesAsync();
 
@@ -314,6 +298,16 @@ namespace FinanceTracker.API.Controllers
             {
                 return BadRequest();
             }
+
+            var userId = GetCurrentUserId();
+            
+            var exists = await _context.Transactions.AnyAsync(t => t.Id == id && t.UserId == userId);
+            if (!exists) 
+            {
+                return NotFound();
+            }
+
+            transaction.UserId = userId; 
 
             _context.Entry(transaction).State = EntityState.Modified;
 
@@ -340,7 +334,11 @@ namespace FinanceTracker.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTransaction(int id)
         {
-            var transaction = await _context.Transactions.FindAsync(id);
+            var userId = GetCurrentUserId();
+            
+            var transaction = await _context.Transactions
+                .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+                
             if (transaction == null)
             {
                 return NotFound();
@@ -354,7 +352,8 @@ namespace FinanceTracker.API.Controllers
 
         private bool TransactionExists(int id)
         {
-            return _context.Transactions.Any(e => e.Id == id);
+            var userId = GetCurrentUserId();
+            return _context.Transactions.Any(e => e.Id == id && e.UserId == userId);
         }
     }
 }
